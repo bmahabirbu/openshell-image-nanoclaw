@@ -19,13 +19,17 @@ FROM ghcr.io/nvidia/openshell-community/sandboxes/base@sha256:aeef1c63f00e2913ea
 
 USER root
 
-RUN npm install --global "pnpm@10.33.0"
+ARG PNPM_VERSION=10.33.0
+ARG NANOCLAW_VERSION=2.2.0
+ARG NANOCLAW_SHA256=69cffb41a09203fc61039c85c9c4dd4f501da957ff84b208bc2ba3a382d908ba
 
-RUN nanoclaw_archive="nanoclaw-v2.2.0.tar.gz" && \
+RUN npm install --global "pnpm@${PNPM_VERSION}"
+
+RUN nanoclaw_archive="nanoclaw-v${NANOCLAW_VERSION}.tar.gz" && \
     curl --fail --location --silent --show-error \
-        "https://github.com/nanocoai/nanoclaw/archive/refs/tags/v2.2.0.tar.gz" \
+        "https://github.com/nanocoai/nanoclaw/archive/refs/tags/v${NANOCLAW_VERSION}.tar.gz" \
         --output "/tmp/${nanoclaw_archive}" && \
-    echo "69cffb41a09203fc61039c85c9c4dd4f501da957ff84b208bc2ba3a382d908ba  /tmp/${nanoclaw_archive}" | sha256sum --check --strict && \
+    echo "${NANOCLAW_SHA256}  /tmp/${nanoclaw_archive}" | sha256sum --check --strict && \
     mkdir --parents /sandbox/nanoclaw && \
     tar --extract --gzip --file "/tmp/${nanoclaw_archive}" \
         --directory /sandbox/nanoclaw --strip-components=1 && \
@@ -46,7 +50,7 @@ RUN printf '%s\n' \
 
 RUN node --version && pnpm --version && \
     node --input-type=module --eval \
-        "import pkg from '/sandbox/nanoclaw/package.json' with { type: 'json' }; if (pkg.version !== '2.2.0') process.exit(1)" && \
+        "import pkg from '/sandbox/nanoclaw/package.json' with { type: 'json' }; if (pkg.version !== '${NANOCLAW_VERSION}') process.exit(1)" && \
     cd /sandbox/nanoclaw && \
     node --input-type=module --eval \
         "import Database from 'better-sqlite3'; new Database(':memory:').close()"
